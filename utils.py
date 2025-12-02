@@ -17,7 +17,7 @@ def load_model(name:str):
         #for testing sessions Logs session creation 
         pid = os.getpid()
         mem = psutil.Process(pid).memory_info().rss
-        with open(SESSION_LOG, "a") as log:
+        with open(SESSION_LOG, "w") as log:
             log.write(f"Process ID:{pid}, Memory:{mem} SESSION LOADED\n")
     else:
         raise RuntimeError(

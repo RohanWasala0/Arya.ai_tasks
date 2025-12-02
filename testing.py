@@ -1,11 +1,12 @@
 import base64
+import os
 from io import BytesIO
 import time
 from PIL import Image
 
 import requests
 
-LOG_FILE = ''
+LOG_FILE = './temp/session_creation.txt'
 IMAGE = './Resources/images.jpeg'
 
 def test():
@@ -22,5 +23,42 @@ def test():
     output_image = Image.open(BytesIO(encoded_output))
     output_image.save('./Resources/result.png', format='png')
 
+def test_with_workers(no_of_workers: int):
+    # if os.path.exists(LOG_FILE):
+    #     os.remove(LOG_FILE)
+
+    time.sleep(2)
+
+    # Send 1 request per worker
+    with open(IMAGE, 'rb') as image:
+        encoded_image = base64.b64encode(image.read()).decode()
+    for x in range(no_of_workers):
+        payload = {
+            'request_id': f"worker {x} request_id",
+            'data': encoded_image
+        }
+        response = requests.request(method="POST", url="http://127.0.0.1:8000/background_remove/", json=payload)
+        assert response.status_code == 200
+
+    time.sleep(1)
+
+    # AI generated
+    # Read the log
+    with open(LOG_FILE) as f:
+        lines = f.readlines()
+
+    # There should be 4 unique worker PIDs
+    pids = {line.split("ID:")[1].split(",")[0] for line in lines}
+
+    assert len(pids) == 4, f"Expected 4 worker PIDs, got {pids}"
+
+    # Also check that each worker loaded exactly 1 model
+    sessions = len(lines)
+    assert sessions == 4, f"Expected 4 SESSION loads, got {sessions}"
+
+    # Optional: print memory usage
+    print("Worker memory usage info:")
+    print("".join(lines))
+
 if __name__ == "__main__":
-    test()
+    test_with_workers(4)
