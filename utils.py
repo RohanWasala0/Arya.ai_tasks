@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+from PIL.Image import Image
 from rembg import new_session
 import os
 import psutil
 
-SESSION_LOG = "/temp/session_creation.txt"
+SESSION_LOG = "./temp/session_creation.txt"
 
 def load_model(name:str):
     _Model_PATH = 'model/u2net.onnx'
@@ -29,10 +30,10 @@ def load_model(name:str):
 class Response:
     request_id: str
     success: bool
-    data: str
+    data: str | Image
     error_message: str
 
 @dataclass
 class Request:
     request_id: str
-    data: str
+    data: str | Image

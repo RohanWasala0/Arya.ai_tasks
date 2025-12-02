@@ -5,6 +5,7 @@ from utils import Request, Response, load_model
 import base64
 
 SESSION = load_model("u2net")
+print("adding something")
 
 from PIL import Image
 
@@ -49,8 +50,12 @@ class BackgroundRemove:
             response.error_message = response.error_message
             return response
         try:
-            decode_base64 = BytesIO(base64.b64decode(request.data))
-            image = Image.open(decode_base64)
+            match request.data:
+                case Image.Image():
+                    image = request.data
+                case bytes() | str():
+                    decode_base64 = BytesIO(base64.b64decode(request.data))
+                    image = Image.open(decode_base64)
             if image.format not in ["JPEG", "JPG", "PNG", "TIFF", "BMP"]:
                 FLAG = False
                 response.error_message = "Invalid Request image not in correct format"
@@ -63,9 +68,12 @@ class BackgroundRemove:
                 output, error = BackgroundRemove.process_image(image)
                 if output:
                     FLAG = True
-                    buffer = BytesIO()
-                    output.save(buffer, format='png')
-                    response.data = base64.b64encode(buffer.getvalue()).decode()
+                    if isinstance(request.data, Image.Image):
+                        response.data = output
+                    else:
+                        buffer = BytesIO()
+                        output.save(buffer, format='png')
+                        response.data = base64.b64encode(buffer.getvalue()).decode()
                 else:
                     FLAG = False
                     response.error_message = error
