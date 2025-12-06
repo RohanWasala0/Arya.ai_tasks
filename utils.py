@@ -1,4 +1,6 @@
+import base64
 from dataclasses import dataclass
+from typing import Any
 from PIL.Image import Image
 from rembg import new_session
 import os
@@ -10,7 +12,6 @@ def load_model(name:str):
     _Model_PATH = 'model/u2net.onnx'
     _Model_PATH = _Model_PATH.split("/")[-1]
     _Model_PATH = _Model_PATH.split(".")[0]
-    print(_Model_PATH)
     if name == _Model_PATH:
         session = new_session(model_name=_Model_PATH)
 
@@ -25,6 +26,11 @@ def load_model(name:str):
         )
 
     return session
+
+def make_base64(file_path: str) -> str:
+    with open(file_path, 'rb') as file_bytes:
+        output = base64.b64encode(file_bytes.read()).decode()
+    return output
 
 @dataclass
 class Response:

@@ -5,7 +5,6 @@ from utils import Request, Response, load_model
 import base64
 
 SESSION = load_model("u2net")
-print("adding something")
 
 from PIL import Image
 
@@ -36,19 +35,12 @@ class BackgroundRemove:
 
     @staticmethod
     async def run(request: Request):
-        FLAG = True
         response = Response(
             request_id= "",
-            success= FLAG,
+            success= True,
             data= "",
             error_message= "",
         )
-        def return_response():
-            response.request_id = request.request_id
-            response.success = FLAG
-            response.data = response.data
-            response.error_message = response.error_message
-            return response
         try:
             match request.data:
                 case Image.Image():
@@ -57,17 +49,16 @@ class BackgroundRemove:
                     decode_base64 = BytesIO(base64.b64decode(request.data))
                     image = Image.open(decode_base64)
             if image.format not in ["JPEG", "JPG", "PNG", "TIFF", "BMP"]:
-                FLAG = False
+                response.success = False
                 response.error_message = "Invalid Request image not in correct format"
         except Exception:
-            FLAG = False
+            response.success = False
             response.error_message = "Invalid Request can not decode the input data"
-            return return_response()
-        if FLAG:
+            return response
+        if response.success:
             try:
                 output, error = BackgroundRemove.process_image(image)
                 if output:
-                    FLAG = True
                     if isinstance(request.data, Image.Image):
                         response.data = output
                     else:
@@ -75,16 +66,15 @@ class BackgroundRemove:
                         output.save(buffer, format='png')
                         response.data = base64.b64encode(buffer.getvalue()).decode()
                 else:
-                    FLAG = False
+                    response.success = False
                     response.error_message = error
-                return return_response()
+                return response
             except Exception as e:
-                FLAG = False
+                response.success = False
                 response.error_message = f"Error processing data {e}"
-                return return_response()
+                return response
         else:
-            FLAG = False
             response.error_message = "Invalid Request error with file format"
-            return return_response()
+            return response
 
 
