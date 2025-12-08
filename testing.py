@@ -8,7 +8,7 @@ from PIL import Image
 import requests
 
 from ImageHologramSign import ImageHologramSign
-from utils import Request, make_base64
+from utils import Request, Response, make_base64
 
 LOG_FILE = './temp/session_creation.txt'
 IMAGE = './Resources/images.jpeg'
@@ -76,8 +76,13 @@ async def test_task2():
         data= make_base64('./Resources/Untitled.jpg')
     )
 
-    response = await ImageHologramSign.run(request)
-    print(response)
+    response: Response = await ImageHologramSign.run(request)
+    import ast
+    response_data = ast.literal_eval(response.data)
+    print(f"Image Quality Data: {response_data.get('image quality data')}")
+    print(f"Hologram Data: {response_data.get('hologram data')}")
+    response_data.get('signature data')['data'] = None
+    print(f"Signature Data: {response_data.get('signature data')}")
 
 if __name__ == "__main__":
     asyncio.run(test_task2())

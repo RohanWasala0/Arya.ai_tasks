@@ -1,6 +1,4 @@
-from requests import request
-from utils import Request, Response, make_base64
-import uuid
+from utils import Request, Response
 import httpx
 import os
 import asyncio
@@ -15,7 +13,7 @@ TASK2_LOG = './temp/API_LOG.log'
 
 class ImageHologramSign:
     client = httpx.AsyncClient(timeout= 10)
-    request_id = ''
+    request_id: str = ''
     data = {}
 
     @classmethod
@@ -56,6 +54,7 @@ class ImageHologramSign:
             'token': HologramToken,
             'content-type': 'application/json'
         }
+
         try:
             response = await cls.client.post(url= url, json= payload, headers= header)
             response.raise_for_status()
@@ -68,7 +67,7 @@ class ImageHologramSign:
     async def check_signature(cls, doc_base64):
         url = "https://ping.arya.ai/api/v2/signature-detection"
         payload = {
-            'output_format': 'snippets',
+            "output": 'snippets',
             'doc_base64': doc_base64,
             'req_id': cls.request_id
         }
@@ -107,21 +106,22 @@ class ImageHologramSign:
                 response.error_message = f'Invalid Request Body with {e}'
                 await ImageHologramSign.close()
                 return response
-            if quality_good:
-                asyncio.gather(
-                    ImageHologramSign.check_hologram(doc_base64= response.data, crop= True),
-                    ImageHologramSign.check_signature(doc_base64= response.data)
-                )
-                response.success = True
-                response.data = str(ImageHologramSign.data)
+            try:
+                if quality_good:
+                    await asyncio.gather(
+                        ImageHologramSign.check_hologram(doc_base64= request.data, crop= True),
+                        ImageHologramSign.check_signature(doc_base64= request.data)
+                    )
+                    response.success = True
+                    response.data = str(ImageHologramSign.data)
+                else:
+                    response.success = False
+                    response.data = str(ImageHologramSign.data)
+                    response.error_message = 'Document quality bad'
                 await ImageHologramSign.close()
                 return response
-            else:
-                response.success = False
-                response.data = str(ImageHologramSign.data)
-                response.error_message = 'Document quality bad'
-                await ImageHologramSign.close()
+            except:
                 return response
-        await ImageHologramSign.close()
-        return response
+        else:
+            return response
 

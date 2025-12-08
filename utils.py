@@ -36,10 +36,10 @@ def make_base64(file_path: str) -> str:
 class Response:
     request_id: str
     success: bool
-    data: str | Image
+    data: str 
     error_message: str
 
 @dataclass
 class Request:
     request_id: str
-    data: str | Image
+    data: str 
