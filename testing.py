@@ -81,7 +81,7 @@ async def test_task2():
     response_data = ast.literal_eval(response.data)
     print(f"Image Quality Data: {response_data.get('image quality data')}")
     print(f"Hologram Data: {response_data.get('hologram data')}")
-    response_data.get('signature data')['data'] = None
+    response_data.get('signature data')['base64'] = None
     print(f"Signature Data: {response_data.get('signature data')}")
 
 if __name__ == "__main__":

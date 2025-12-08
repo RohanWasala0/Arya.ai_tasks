@@ -3,6 +3,7 @@ from typing import Dict, Tuple
 from rembg import remove
 from utils import Request, Response, load_model
 import base64
+from fastapi.concurrency import run_in_threadpool
 
 SESSION = load_model("u2net")
 
@@ -42,12 +43,8 @@ class BackgroundRemove:
             error_message= "",
         )
         try:
-            match request.data:
-                case Image.Image():
-                    image = request.data
-                case bytes() | str():
-                    decode_base64 = BytesIO(base64.b64decode(request.data))
-                    image = Image.open(decode_base64)
+            decode_base64 = BytesIO(base64.b64decode(request.data))
+            image = Image.open(decode_base64)
             if image.format not in ["JPEG", "JPG", "PNG", "TIFF", "BMP"]:
                 response.success = False
                 response.error_message = "Invalid Request image not in correct format"
@@ -57,14 +54,11 @@ class BackgroundRemove:
             return response
         if response.success:
             try:
-                output, error = BackgroundRemove.process_image(image)
+                output, error = await run_in_threadpool(BackgroundRemove.process_image, image)
                 if output:
-                    if isinstance(request.data, Image.Image):
-                        response.data = output
-                    else:
-                        buffer = BytesIO()
-                        output.save(buffer, format='png')
-                        response.data = base64.b64encode(buffer.getvalue()).decode()
+                    buffer = BytesIO()
+                    output.save(buffer, format='png')
+                    response.data = base64.b64encode(buffer.getvalue()).decode()
                 else:
                     response.success = False
                     response.error_message = error

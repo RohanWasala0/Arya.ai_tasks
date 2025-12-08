@@ -1,8 +1,10 @@
 from dataclasses import asdict
+from httpx import request
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 
+from ImageHologramSign import ImageHologramSign
 from utils import Request
 from BackgroundRemove import BackgroundRemove
 
@@ -40,5 +42,18 @@ async def encode_file(payload: PayloadRequest):
         raise HTTPException(status_code=500, detail="Bad Request!!!!!!")
 
 @app.post('/image_hologram_sign/')
-async def gather():
-    pass
+async def gather(payload: PayloadRequest):
+    try:
+        request = Request(
+            request_id= payload.request_id,
+            data= payload.data
+        )
+
+        response = await ImageHologramSign.run(request)
+        if response.error_message == "":
+            return JSONResponse(content= asdict(response))
+        else:
+            return JSONResponse(content= asdict(response), status_code= 400)
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code= 500, detail="Bad Request!!!!")
